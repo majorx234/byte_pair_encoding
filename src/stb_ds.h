@@ -146,6 +146,10 @@ DOCUMENTATION
           Returns the number of total elements the array can contain without
           needing to be reallocated.
 
+      arrswap:
+         void arrswap(T** a, T**b));
+           swaps array pointer
+
   Hash maps & String hash maps
 
     Given T is a structure type: struct { TK key; TV value; }. Note that some
@@ -413,6 +417,7 @@ CREDITS
 #define arrdelswap  stbds_arrdelswap
 #define arrcap      stbds_arrcap
 #define arrsetcap   stbds_arrsetcap
+#define arrswap     stbds_arrswap
 
 #define hmput       stbds_hmput
 #define hmputs      stbds_hmputs
@@ -879,6 +884,32 @@ static size_t stbds_log2(size_t slot_count)
     ++n;
   }
   return n;
+}
+
+void arrswap(void *a_raw, void *b_raw) {
+  void** a = a_raw;
+  void** b = b_raw;
+
+  /* not needed
+  stbds_array_header* a_header = stbds_header(*a);
+  stbds_array_header* b_header = stbds_header(*b);
+  stbds_array_header temp;
+  temp.capacity = a_header->capacity;
+  temp.hash_table = a_header->hash_table;
+  temp.length = a_header->length;
+  temp.temp = a_header->temp;
+  a_header->capacity = b_header->capacity;
+  a_header->hash_table = b_header->hash_table;
+  a_header->length = b_header->length;
+  a_header->temp = b_header->temp;
+  b_header->capacity = temp.capacity;
+  b_header->hash_table = temp.hash_table;
+  b_header->length = temp.length;
+  b_header->temp = temp.temp;
+  */
+  void* temp_p = *a;
+  *a = *b;
+  *b = temp_p;
 }
 
 static stbds_hash_index *stbds_make_hash_index(size_t slot_count, stbds_hash_index *ot)
