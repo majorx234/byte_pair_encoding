@@ -21,6 +21,18 @@ int compare_freqs(const void* a_raw, const void* b_raw) {
   return(int)b->value - (int)a->value;
 }
 
+void print_tokens(Pair* pairs, uint32_t *tokens) {
+  for (size_t i = 0; i < arrlen(tokens); i++) {
+    assert( tokens[i] < arrlen(pairs));
+    if (pairs[tokens[i]].l == tokens[i]) {
+      printf("%c", tokens[i]);
+    } else {
+      printf("[%u]", tokens[i]);
+    }
+  }
+  printf("\n");
+}
+
 char *byte_pair_encode(char *text) {
   Freq* freq_map = NULL;
   u_int32_t* vec_tokens_in = NULL;
@@ -100,6 +112,8 @@ char *byte_pair_encode(char *text) {
   for (size_t i = 0; i < vec_tokens_out_length; i++) {
     printf("token_out: %d\n", vec_tokens_out[i]);
   }
+  print_tokens(pairs_lookup_table, vec_tokens_in);
+  print_tokens(pairs_lookup_table, vec_tokens_out);
 
   arrfree(vec_tokens_in);
   arrfree(vec_tokens_out);
