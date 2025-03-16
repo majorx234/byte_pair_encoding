@@ -659,6 +659,13 @@ extern void * stbds_shmode_func(size_t elemsize, int mode);
 #define stbds_shgetp_null(t,k)  (stbds_shgeti(t,k) == -1 ? NULL : &(t)[stbds_temp((t)-1)])
 #define stbds_shlen        stbds_hmlen
 
+#define stbds_arrswap(a, b) \
+  do {\
+    void* temp = *(a); \
+    *(a) = *(b); \
+    *(b) = temp; \
+  } while(0)
+
 typedef struct
 {
   size_t      length;
@@ -884,32 +891,6 @@ static size_t stbds_log2(size_t slot_count)
     ++n;
   }
   return n;
-}
-
-void arrswap(void *a_raw, void *b_raw) {
-  void** a = a_raw;
-  void** b = b_raw;
-
-  /* not needed
-  stbds_array_header* a_header = stbds_header(*a);
-  stbds_array_header* b_header = stbds_header(*b);
-  stbds_array_header temp;
-  temp.capacity = a_header->capacity;
-  temp.hash_table = a_header->hash_table;
-  temp.length = a_header->length;
-  temp.temp = a_header->temp;
-  a_header->capacity = b_header->capacity;
-  a_header->hash_table = b_header->hash_table;
-  a_header->length = b_header->length;
-  a_header->temp = b_header->temp;
-  b_header->capacity = temp.capacity;
-  b_header->hash_table = temp.hash_table;
-  b_header->length = temp.length;
-  b_header->temp = temp.temp;
-  */
-  void* temp_p = *a;
-  *a = *b;
-  *b = temp_p;
 }
 
 static stbds_hash_index *stbds_make_hash_index(size_t slot_count, stbds_hash_index *ot)
