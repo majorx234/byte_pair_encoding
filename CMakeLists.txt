@@ -19,3 +19,16 @@ target_include_directories(byte_pair_encode
  PRIVATE
   include
 )
+
+set(VEC_SWAP_TEST_SOURCES
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/vec_swap_test.c
+)
+add_executable(vec_swap_test)
+target_sources(vec_swap_test
+ PRIVATE
+	${VEC_SWAP_TEST_SOURCES}
+)
+target_include_directories(vec_swap_test
+ PRIVATE
+  include
+)
