@@ -59,7 +59,7 @@ defer:
 }
 
 bool dump_pairs(const char *file_path, Pair* pairs) {
-  return write_entire_file(file_path, pairs, arrlen(pairs));
+  return write_entire_file(file_path, pairs, arrlen(pairs)*sizeof(Pair));
 }
 
 void generate_dot(const char *file_path, Pair *pairs) {
@@ -127,8 +127,6 @@ char *byte_pair_encode(char *text) {
         }
       }
     }
-    generate_dot("test.dot", pairs_lookup_table);
-    dump_pairs("test.dat", pairs_lookup_table);
     arrswap(&vec_tokens_in, &vec_tokens_out);
     arrfree(vec_tokens_out);
 
@@ -138,6 +136,10 @@ char *byte_pair_encode(char *text) {
   printf("byte pair encode finished with %d length of hashmap\n",
          freq_map_length);
   print_tokens(pairs_lookup_table, vec_tokens_in);
+
+  // print out
+  generate_dot("test.dot", pairs_lookup_table);
+  dump_pairs("test.dat", pairs_lookup_table);
 
   arrfree(pairs_lookup_table);
   arrfree(vec_tokens_in);
