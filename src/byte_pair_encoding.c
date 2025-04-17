@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <fcntl.h>
+#include <string.h>
 #include <sys/stat.h>
 
 #define STB_DS_IMPLEMENTATION
@@ -77,6 +78,15 @@ bool read_entire_file(const char *path, void** data, size_t* size)
 
 bool dump_pairs(const char *file_path, Pair* pairs) {
   return write_entire_file(file_path, pairs, arrlen(pairs)*sizeof(Pair));
+}
+
+bool load_apirs(const char *file_path, Pair** pairs){
+  size_t file_size = 0;
+  char* data = NULL;
+  bool ok = read_entire_file(file_path, (void**)&data, &file_size);
+  arrsetlen(*pairs, file_size/sizeof(Pair));
+  memcpy(*pairs, data, file_size);
+  return ok;
 }
 
 void generate_dot(const char *file_path, Pair *pairs) {
