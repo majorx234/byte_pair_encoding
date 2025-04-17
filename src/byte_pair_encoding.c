@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #define STB_DS_IMPLEMENTATION
 #include "stb_ds.h"
@@ -56,6 +58,21 @@ bool write_entire_file(const char *path, const void *data, size_t size)
 defer:
     if (f) fclose(f);
     return result;
+}
+
+bool read_entire_file(const char *path, void** data, size_t* size)
+{
+  FILE *fp = fopen(path, "rb");
+  struct stat finfo;
+  int err_stat = fstat(fileno(fp), &finfo);
+  size_t file_size = finfo.st_size;
+  *data = malloc(file_size);
+  if (*data == NULL){
+    return false;
+  }
+  int err_read = fread(*data, 1, file_size, fp);
+  fclose(fp);
+  return true;
 }
 
 bool dump_pairs(const char *file_path, Pair* pairs) {
