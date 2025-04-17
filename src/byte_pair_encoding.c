@@ -91,14 +91,27 @@ bool load_apirs(const char *file_path, Pair** pairs){
 
 void generate_dot(const char *file_path, Pair *pairs) {
   // TODO write into buffer and dump to file
-  printf("digraph Pairs {\n");
+  char buffer1[1024];
+  char buffer2[1024];
+  char* dyn_buffer = NULL;
+  int size = sprintf(buffer1, "digraph Pairs {\n");
+  arrsetlen(dyn_buffer, size);
+  memcpy(dyn_buffer, buffer1, size);
   for (uint32_t token = 0; token < arrlen(pairs); token++ ){
     if (token != pairs[token].l) {
-      printf("  %u -> %u\n", token, pairs[token].l);
-      printf("  %u -> %u\n", token, pairs[token].r);
+      int size1 = sprintf(buffer1, "  %u -> %u\n", token, pairs[token].l);
+      char* where1 = arraddnptr(dyn_buffer, size1);
+      memcpy(where1, buffer1, size1);
+      int size2 = sprintf(buffer2, "  %u -> %u\n", token, pairs[token].r);
+      char* where2 = arraddnptr(dyn_buffer, size2);
+      memcpy(where2, buffer2, size2);
     }
   }
-  printf("}\n");
+  char* where_end = arraddnptr(dyn_buffer, 2);
+  sprintf(where_end,"}\n");
+  FILE* fb = fopen(file_path, "wb");
+  fwrite(dyn_buffer, arrlen(dyn_buffer), 1, fb);
+  arrfree(dyn_buffer);
 }
 
 char *byte_pair_encode(char *text) {
