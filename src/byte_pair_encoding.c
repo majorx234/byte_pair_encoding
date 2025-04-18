@@ -184,4 +184,5 @@ char *byte_pair_encode(char *text) {
   arrfree(pairs_lookup_table);
   arrfree(vec_tokens_in);
   // uses ds dynamic array
-  }
+  return NULL;
+}
