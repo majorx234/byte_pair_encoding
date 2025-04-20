@@ -198,3 +198,16 @@ void print_pairs(Pair *pairs) {
     }
   }
 }
+
+void render_token(Pair *pairs, uint32_t token, char **token_out)
+{
+  if(pairs == NULL)
+    return;
+  if (token == pairs[token].l) {
+    arrput(*token_out, (char)token);
+    int arr_last = arrlen(*token_out)-1;
+    return;
+  }
+  render_token(pairs, pairs[token].l, token_out);
+  render_token(pairs, pairs[token].r, token_out);
+}
