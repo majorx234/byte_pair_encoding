@@ -10,15 +10,6 @@
 #define STB_DS_IMPLEMENTATION
 #include "stb_ds.h"
 
-typedef struct Pair {
-  uint32_t l,r;
-} Pair;
-
-typedef struct Freq {
-  Pair key;
-  size_t value;
-} Freq;
-
 int compare_freqs(const void* a_raw, const void* b_raw) {
   const Freq* a = a_raw;
   const Freq* b = b_raw;
@@ -80,7 +71,7 @@ bool dump_pairs(const char *file_path, Pair* pairs) {
   return write_entire_file(file_path, pairs, arrlen(pairs)*sizeof(Pair));
 }
 
-bool load_apirs(const char *file_path, Pair** pairs){
+bool load_pairs(const char *file_path, Pair** pairs){
   size_t file_size = 0;
   char* data = NULL;
   bool ok = read_entire_file(file_path, (void**)&data, &file_size);

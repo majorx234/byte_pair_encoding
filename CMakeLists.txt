@@ -36,7 +36,7 @@ target_include_directories(vec_swap_test
 set(PAIRS2DOT_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/pairs2dot.c
 )
-add_executable(pairs2dor)
+add_executable(pairs2dot)
 target_sources(pairs2dot
  PRIVATE
   ${PAIRS2DOT_SOURCES}
