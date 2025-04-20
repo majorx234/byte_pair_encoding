@@ -186,3 +186,15 @@ char *byte_pair_encode(char *text) {
   // uses ds dynamic array
   return NULL;
 }
+
+void print_pairs(Pair *pairs) {
+  if (pairs == NULL){
+    return;
+  }
+  int pair_len = arrlen(pairs);
+  if ( pair_len > 0) {
+    for (int i = 0; i < pair_len; ++i) {
+      printf("pairs[%d] l:%d r:%d\n", i, pairs[i].l, pairs[i].r);
+    }
+  }
+}
