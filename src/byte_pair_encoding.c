@@ -52,17 +52,17 @@ defer:
     return result;
 }
 
-bool read_entire_file(const char *path, void** data, size_t* size)
+bool read_entire_file(const char *path, void** data, size_t* file_size)
 {
   FILE *fp = fopen(path, "rb");
   struct stat finfo;
   int err_stat = fstat(fileno(fp), &finfo);
-  size_t file_size = finfo.st_size;
-  *data = malloc(file_size);
+  *file_size = finfo.st_size;
+  *data = malloc(*file_size);
   if (*data == NULL){
     return false;
   }
-  int err_read = fread(*data, 1, file_size, fp);
+  int err_read = fread(*data, 1, *file_size, fp);
   fclose(fp);
   return true;
 }

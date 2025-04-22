@@ -16,7 +16,8 @@ int main(int argc, char **argv) {
   }
   const char* output_file_path = argv[2];
   Pair *pairs = NULL;
-  if(load_pairs(input_file_path, &pairs)) return 1;
+  if(!load_pairs(input_file_path, &pairs)) return 1;
+  generate_dot(output_file_path, pairs);
   return 0;
 }
 
