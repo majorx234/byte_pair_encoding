@@ -1,5 +1,6 @@
 #include "byte_pair_encoding.h"
 #include <bits/pthreadtypes.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -191,19 +192,33 @@ typedef struct ThreadReturnStuff{
 } ThreadReturnStuff;
 
 void* parallize_bpe() {
+  Freq* merged_freq = NULL;
+  ThreadStuff thread_stuff = {
+    .freqs = NULL,
+    .collect_freqs = PTHREAD_COND_INITIALIZER
+  };
   pthread_t thread_hdls[THREAD_COUNT];
-  for(size_t id = 0; id < THREAD_COUNT; ++id) {
+  for(size_t id = 0; id < THREAD_COUNT; id++) {
     int err = pthread_create(&thread_hdls[id], NULL, byte_pair_encode_threaded, NULL);
     if (err != 0){
       printf("cannot creat thread: %s\n", strerror(err));
     }
   }
-  // join threads
-  for(size_t id = 0; id < THREAD_COUNT; ++id) {
+  // join threads and aggregate results
+  for(size_t id = 0; id < THREAD_COUNT; id++) {
     ThreadReturnStuff ret;
     int err = pthread_join(thread_hdls[id], NULL);
     if (err != 0){
       printf("cannot creat thread: %s\n", strerror(err));
+    }
+    size_t n = hmlen(thread_stuff.freqs[id]);
+    for(size_t i = 0; i < n; i++) {
+      Pair key = thread_stuff.freqs[id][i].key;
+      ptrdiff_t place = hmgeti(merged_freq, key);
+      if(place < 0)
+        hmputs(merged_freq, thread_stuff.freqs[id][i]);
+      else
+        merged_freq[place].value += thread_stuff.freqs[id][i].value;
     }
   }
 }
