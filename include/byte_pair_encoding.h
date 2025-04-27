@@ -17,7 +17,7 @@ char *byte_pair_encode(char *text);
 bool load_pairs(const char *file_path, Pair** pairs);
 void generate_dot(const char *file_path, Pair *pairs);
 void print_pairs(Pair *pairs);
-void *parallize_bpe();
+void parallize_bpe(char* text);
 void *byte_pair_encode_threaded(void *thread_stuff);
 
 #endif // BYTE_PAIR_ENDOING_H_

@@ -111,14 +111,15 @@ void generate_dot(const char *file_path, Pair *pairs) {
 char *byte_pair_encode(char *text) {
   u_int32_t *vec_tokens_in = NULL;
   size_t text_size = strlen(text);
+
+  for (int i = 0; i < text_size; i++) {
+    arrput(vec_tokens_in, text[i]);
+  }
+
   Pair *pairs_lookup_table = NULL;
   // generate basic lookup table
   for (size_t i = 0; i < 256; i++) {
     arrput(pairs_lookup_table, ((Pair){.l = i, .r = 0}));
-  }
-
-  for (int i = 0; i < text_size; i++) {
-    arrput(vec_tokens_in, text[i]);
   }
 
   int freq_map_length = 0;
@@ -181,49 +182,90 @@ char *byte_pair_encode(char *text) {
   return NULL;
 }
 
+#define FREQ_COLLECTION_CHUNK_SIZE (16*1024)
+
 #define THREAD_COUNT 8
 typedef struct ThreadStuff{
+  size_t id;
   Freq* freqs[THREAD_COUNT];
   pthread_cond_t collect_freqs;
+  pthread_mutex_t* tokens_in_cursor_mutex;
+  size_t tokens_in_cursor;
+  char* tokens_in;
 } ThreadStuff;
 
 typedef struct ThreadReturnStuff{
   uint32_t ret;
 } ThreadReturnStuff;
 
-void* parallize_bpe() {
+void parallize_bpe(char* text) {
   Freq* merged_freq = NULL;
-  ThreadStuff thread_stuff = {
-    .freqs = NULL,
-    .collect_freqs = PTHREAD_COND_INITIALIZER
-  };
   pthread_t thread_hdls[THREAD_COUNT];
+
+  pthread_mutex_t tokens_in_cursor_mutex = {0};
+
+  u_int32_t *vec_tokens_in = NULL;
+  size_t text_size = strlen(text);
+
+  for (int i = 0; i < text_size; i++) {
+    arrput(vec_tokens_in, text[i]);
+  }
+
   for(size_t id = 0; id < THREAD_COUNT; id++) {
-    int err = pthread_create(&thread_hdls[id], NULL, byte_pair_encode_threaded, NULL);
+    ThreadStuff thread_stuff_template = {
+      .id = id,
+      .freqs = NULL,
+      .collect_freqs = PTHREAD_COND_INITIALIZER,
+      .tokens_in_cursor_mutex = &tokens_in_cursor_mutex,
+      .tokens_in_cursor = 0,
+      .tokens_in = NULL,
+    };
+    ThreadStuff* thread_stuff = malloc(sizeof(ThreadStuff));
+    memcpy(thread_stuff, &thread_stuff_template, sizeof(ThreadStuff));
+    int err = pthread_create(&thread_hdls[id], NULL, byte_pair_encode_threaded, thread_stuff);
     if (err != 0){
       printf("cannot creat thread: %s\n", strerror(err));
     }
   }
   // join threads and aggregate results
   for(size_t id = 0; id < THREAD_COUNT; id++) {
-    ThreadReturnStuff ret;
-    int err = pthread_join(thread_hdls[id], NULL);
+    ThreadStuff* thread_stuff;
+    int err = pthread_join(thread_hdls[id], (void**)&thread_stuff);
     if (err != 0){
       printf("cannot creat thread: %s\n", strerror(err));
     }
-    size_t n = hmlen(thread_stuff.freqs[id]);
+    size_t n = hmlen(thread_stuff->freqs[id]);
     for(size_t i = 0; i < n; i++) {
-      Pair key = thread_stuff.freqs[id][i].key;
+      Pair key = thread_stuff->freqs[id][i].key;
       ptrdiff_t place = hmgeti(merged_freq, key);
       if(place < 0)
-        hmputs(merged_freq, thread_stuff.freqs[id][i]);
+        hmputs(merged_freq, thread_stuff->freqs[id][i]);
       else
-        merged_freq[place].value += thread_stuff.freqs[id][i].value;
+        merged_freq[place].value += thread_stuff->freqs[id][i].value;
     }
   }
 }
 
-void *byte_pair_encode_threaded(void* thread_stuff) {
+void *byte_pair_encode_threaded(void* thread_stuff_raw) {
+  ThreadStuff* thread_stuff = (ThreadStuff*)thread_stuff_raw;
+  size_t id = thread_stuff->id;
+
+  hmfree(thread_stuff->freqs[id]);
+  int tokens_in_count = arrlen(thread_stuff->tokens_in);
+  while(true) {
+    size_t begin, end = 0;
+    pthread_mutex_lock(thread_stuff->tokens_in_cursor_mutex);
+    if(thread_stuff->tokens_in_cursor + FREQ_COLLECTION_CHUNK_SIZE <= tokens_in_count){
+      begin = thread_stuff->tokens_in_cursor;
+      thread_stuff->tokens_in_cursor += FREQ_COLLECTION_CHUNK_SIZE;
+      end = thread_stuff->tokens_in_cursor;
+    } else {
+      begin = thread_stuff->tokens_in_cursor;
+      thread_stuff->tokens_in_cursor = tokens_in_count;
+      end = thread_stuff->tokens_in_cursor;
+    }
+    pthread_mutex_unlock(thread_stuff->tokens_in_cursor_mutex);
+  }
   char *text;
   u_int32_t *vec_tokens_in = NULL;
   size_t text_size = strlen(text);
