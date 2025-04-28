@@ -187,10 +187,10 @@ char *byte_pair_encode(char *text) {
 #define THREAD_COUNT 8
 typedef struct ThreadStuff{
   size_t id;
-  Freq* freqs[THREAD_COUNT];
+  Freq** freqs;
   pthread_cond_t collect_freqs;
   pthread_mutex_t* tokens_in_cursor_mutex;
-  size_t tokens_in_cursor;
+  size_t* tokens_in_cursor;
   char* tokens_in;
 } ThreadStuff;
 
@@ -203,10 +203,10 @@ void parallize_bpe(char* text) {
   pthread_t thread_hdls[THREAD_COUNT];
 
   pthread_mutex_t tokens_in_cursor_mutex = {0};
-
+  size_t tokens_in_cursor = 0;
   u_int32_t *vec_tokens_in = NULL;
   size_t text_size = strlen(text);
-
+  Freq* freqs[THREAD_COUNT] = {NULL};
   for (int i = 0; i < text_size; i++) {
     arrput(vec_tokens_in, text[i]);
   }
@@ -214,10 +214,10 @@ void parallize_bpe(char* text) {
   for(size_t id = 0; id < THREAD_COUNT; id++) {
     ThreadStuff thread_stuff_template = {
       .id = id,
-      .freqs = NULL,
+      .freqs = freqs,
       .collect_freqs = PTHREAD_COND_INITIALIZER,
       .tokens_in_cursor_mutex = &tokens_in_cursor_mutex,
-      .tokens_in_cursor = 0,
+      .tokens_in_cursor = &tokens_in_cursor,
       .tokens_in = NULL,
     };
     ThreadStuff* thread_stuff = malloc(sizeof(ThreadStuff));
@@ -255,14 +255,14 @@ void *byte_pair_encode_threaded(void* thread_stuff_raw) {
   while(true) {
     size_t begin, end = 0;
     pthread_mutex_lock(thread_stuff->tokens_in_cursor_mutex);
-    if(thread_stuff->tokens_in_cursor + FREQ_COLLECTION_CHUNK_SIZE <= tokens_in_count){
-      begin = thread_stuff->tokens_in_cursor;
-      thread_stuff->tokens_in_cursor += FREQ_COLLECTION_CHUNK_SIZE;
-      end = thread_stuff->tokens_in_cursor;
+    if(*(thread_stuff->tokens_in_cursor) + FREQ_COLLECTION_CHUNK_SIZE <= tokens_in_count){
+      begin = *(thread_stuff->tokens_in_cursor);
+      *(thread_stuff->tokens_in_cursor) += FREQ_COLLECTION_CHUNK_SIZE;
+      end = *(thread_stuff->tokens_in_cursor);
     } else {
-      begin = thread_stuff->tokens_in_cursor;
-      thread_stuff->tokens_in_cursor = tokens_in_count;
-      end = thread_stuff->tokens_in_cursor;
+      begin = *(thread_stuff->tokens_in_cursor);
+      *(thread_stuff->tokens_in_cursor) = tokens_in_count;
+      end = *(thread_stuff->tokens_in_cursor);
     }
     pthread_mutex_unlock(thread_stuff->tokens_in_cursor_mutex);
   }
